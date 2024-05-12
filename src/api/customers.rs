@@ -49,3 +49,16 @@ pub async fn create(app: &State<App>) -> Result<Created<Json<CustomerId>>, Error
     })
     .await
 }
+
+fn serial_rx_to_nats(port: &mut BoxSerial, nats_client: &mut nats::Client) -> BoxResult<()> {
+    let mut buffer: Vec<u8> = vec![0; 1024];
+
+    // Send data from serial to NATS forever
+    loop {
+        if let Ok(length) = port.read(&mut buffer.as_mut_slice()) {
+            if length > 0 {
+                nats_client.publish("radar", &buffer)?;
+            }
+        }
+    }
+}
